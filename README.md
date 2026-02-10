@@ -8,6 +8,8 @@
 
 **Multi-platform social posting and replying with automatic validation, image uploads, threads, and cost transparency.**
 
+**Repository:** [github.com/teeclaw/social-post](https://github.com/teeclaw/social-post)
+
 ## Features
 
 ✅ **Multi-account support** - Manage multiple Twitter accounts from one skill  

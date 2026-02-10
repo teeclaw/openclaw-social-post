@@ -16,6 +16,8 @@ metadata:
 
 Post to Twitter and/or Farcaster with automatic character limit validation and image upload handling.
 
+**Repository:** [github.com/teeclaw/social-post](https://github.com/teeclaw/social-post)
+
 ## Features
 
 - ✅ **Multi-account support** - manage multiple Twitter accounts from one skill
