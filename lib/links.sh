@@ -38,6 +38,12 @@ shorten_links_in_text() {
   while IFS= read -r url; do
     [ -z "$url" ] && continue
     
+    # Skip GitHub URLs (keep them full)
+    if [[ "$url" =~ github\.com ]]; then
+      echo "Skipping GitHub URL (keeping full): $url" >&2
+      continue
+    fi
+    
     echo "Shortening: $url" >&2
     local short=$(shorten_url "$url")
     
@@ -68,6 +74,12 @@ estimate_link_savings() {
   local total_saved=0
   while IFS= read -r url; do
     [ -z "$url" ] && continue
+    
+    # Skip GitHub URLs (they won't be shortened)
+    if [[ "$url" =~ github\.com ]]; then
+      continue
+    fi
+    
     local url_length=${#url}
     # TinyURL typically produces ~20 char URLs
     local short_length=20
