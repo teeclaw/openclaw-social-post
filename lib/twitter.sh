@@ -1,8 +1,6 @@
 #!/bin/bash
 # Twitter posting library
 
-TWITTER_POST_SCRIPT="/home/phan_harry/.openclaw/workspace/scripts/twitter-post.sh"
-
 # Get credentials based on TWITTER_ACCOUNT env var
 get_twitter_credentials() {
   source /home/phan_harry/.openclaw/.env
@@ -27,17 +25,12 @@ get_twitter_credentials() {
 twitter_post_text() {
   local text="$1"
   local reply_to_id="$2"
+  local quote_tweet_id="$3"
   
   get_twitter_credentials
   
-  if [ ! -f "$TWITTER_POST_SCRIPT" ]; then
-    echo "Error: Twitter post script not found at $TWITTER_POST_SCRIPT" >&2
-    return 1
-  fi
-  
-  if [ -n "$reply_to_id" ]; then
-    # Post as reply (for threads)
-    python3 - "$text" "$reply_to_id" <<'EOF'
+  # Consolidated posting logic - always use safe Python with sys.argv
+  python3 - "$text" "${reply_to_id:-}" "${quote_tweet_id:-}" <<'EOF'
 import requests
 from requests_oauthlib import OAuth1
 import os
@@ -45,7 +38,8 @@ import sys
 import json
 
 text = sys.argv[1]
-reply_to = sys.argv[2]
+reply_to = sys.argv[2] if len(sys.argv) > 2 and sys.argv[2] else None
+quote_id = sys.argv[3] if len(sys.argv) > 3 and sys.argv[3] else None
 
 consumer_key = os.environ['X_CONSUMER_KEY']
 consumer_secret = os.environ['X_CONSUMER_SECRET']
@@ -55,26 +49,32 @@ access_token_secret = os.environ['X_ACCESS_TOKEN_SECRET']
 auth = OAuth1(consumer_key, consumer_secret, access_token, access_token_secret)
 
 url = "https://api.twitter.com/2/tweets"
-payload = {
-    "text": text,
-    "reply": {
-        "in_reply_to_tweet_id": reply_to
-    }
-}
+payload = {"text": text}
+
+if reply_to:
+    payload["reply"] = {"in_reply_to_tweet_id": reply_to}
+
+if quote_id:
+    payload["quote_tweet_id"] = quote_id
 
 response = requests.post(url, auth=auth, json=payload)
 
 if response.status_code == 201:
     tweet = response.json()
     tweet_id = tweet['data']['id']
-    print(tweet_id)
+    if reply_to:
+        # Thread mode: just print ID for chaining
+        print(tweet_id)
+    else:
+        print(f"✓ Tweet posted successfully!")
+        print(f"Tweet ID: {tweet_id}")
+        print(f"URL: https://twitter.com/user/status/{tweet_id}")
 else:
-    print(f"Error: {response.status_code} - {response.text}", file=sys.stderr)
+    print(f"✗ Failed to post tweet", file=sys.stderr)
+    print(f"Status: {response.status_code}", file=sys.stderr)
+    print(f"Response: {response.text}", file=sys.stderr)
     exit(1)
 EOF
-  else
-    "$TWITTER_POST_SCRIPT" "$text"
-  fi
 }
 
 # Upload image to Twitter and get media_id
@@ -133,6 +133,7 @@ EOF
 twitter_post_with_image() {
   local text="$1"
   local image_path="$2"
+  local quote_tweet_id="$3"
   
   echo "Uploading image to Twitter..." >&2
   local media_id=$(twitter_upload_image "$image_path")
@@ -144,8 +145,11 @@ twitter_post_with_image() {
   
   echo "Image uploaded (media_id: $media_id)" >&2
   
-  # Post with media_id (credentials already loaded)
-  python3 - "$text" "$media_id" <<'EOF'
+  # Load credentials explicitly for posting step
+  get_twitter_credentials
+  
+  # Post with media_id
+  python3 - "$text" "$media_id" "${quote_tweet_id:-}" <<'EOF'
 import requests
 from requests_oauthlib import OAuth1
 import os
@@ -154,6 +158,7 @@ import json
 
 text = sys.argv[1]
 media_id = sys.argv[2]
+quote_id = sys.argv[3] if len(sys.argv) > 3 and sys.argv[3] else None
 
 consumer_key = os.environ['X_CONSUMER_KEY']
 consumer_secret = os.environ['X_CONSUMER_SECRET']
@@ -169,6 +174,9 @@ payload = {
         "media_ids": [media_id]
     }
 }
+
+if quote_id:
+    payload["quote_tweet_id"] = quote_id
 
 response = requests.post(url, auth=auth, json=payload)
 

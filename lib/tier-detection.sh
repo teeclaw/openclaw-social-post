@@ -68,14 +68,7 @@ try:
     if response.status_code == 200:
         data = response.json()['data']
         
-        # Check subscription_type field (if available)
-        # Note: This field might not be available in all API tiers
-        # Fallback: Premium users typically have access to longer character limits
-        
-        # For now, we'll use a heuristic:
-        # - Check if we can successfully post > 280 chars (test with API limits)
-        # - Or check subscription_type if available
-        
+        # Check subscription_type field if available
         subscription_type = data.get('subscription_type', 'none')
         
         # Map subscription types
@@ -84,28 +77,10 @@ try:
         elif subscription_type == 'premium':
             print("premium")
         else:
-            # Fallback: Try to detect by attempting to validate a long tweet
-            # Premium users have 25k char limit, Basic users have 280
-            # We'll use the v2 API's tweet length validation
-            test_url = "https://api.twitter.com/2/tweets"
-            test_text = "x" * 281  # Just over Basic limit
-            test_payload = {"text": test_text}
-            
-            # Dry run - don't actually post
-            # Check the error message
-            test_response = requests.post(test_url, auth=auth, json=test_payload)
-            
-            if test_response.status_code == 400:
-                error = test_response.json()
-                # If error mentions character limit, we know the account type
-                if 'text' in str(error) and '280' in str(error):
-                    print("basic")
-                else:
-                    # No character limit error = Premium
-                    print("premium")
-            else:
-                # Default to basic if we can't determine
-                print("basic")
+            # Safe fallback: default to basic
+            # DO NOT post test tweets to detect tier - it creates ghost posts!
+            # If subscription_type is not available from API, assume basic (280 char limit)
+            print("basic")
     else:
         # API call failed, default to basic (safe fallback)
         print("basic", file=sys.stderr)
@@ -137,16 +112,17 @@ get_cached_tier() {
     return 1
   fi
   
-  local cache_data=$(python3 - "$account" "$TIER_CACHE_HOURS" <<'EOF'
+  local cache_data=$(python3 - "$account" "$TIER_CACHE_HOURS" "$TIER_CACHE_FILE" <<'EOF'
 import json
 import sys
 import time
 
 account = sys.argv[1]
 cache_hours = int(sys.argv[2])
+cache_file = sys.argv[3]
 
 try:
-    with open(sys.argv[0].replace('-', '/home/phan_harry/.openclaw/workspace/memory/twitter-account-tiers.json')) as f:
+    with open(cache_file, 'r') as f:
         cache = json.load(f)
     
     if account in cache:

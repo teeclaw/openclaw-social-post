@@ -28,6 +28,7 @@ TEXT=""
 TWITTER_ACCOUNT="mr_crtee"  # Default account
 REFRESH_TIER=false
 FORCE_THREAD=false
+QUOTE_TWEET=""
 
 # Parse arguments
 while [[ $# -gt 0 ]]; do
@@ -73,6 +74,10 @@ while [[ $# -gt 0 ]]; do
       TWITTER_ACCOUNT="$2"
       shift 2
       ;;
+    --quote)
+      QUOTE_TWEET="$2"
+      shift 2
+      ;;
     --vary)
       VARY_TEXT=true
       shift
@@ -88,6 +93,7 @@ Options:
   --farcaster       Post to Farcaster only
   --account <name>  Twitter account (mr_crtee or oxdasx, default: mr_crtee)
   --vary            Auto-vary text to avoid duplicate content detection
+  --quote <id|url>  Quote tweet (tweet ID or full URL)
   --image <path>    Attach image
   --truncate        Auto-truncate if over limit
   --thread          Force thread mode (split into multiple posts)
@@ -107,6 +113,7 @@ Examples:
   post.sh --thread "Very long text..."                # Auto-thread
   post.sh --shorten-links "Check https://example.com" # Shorten URLs
   post.sh --twitter --image pic.png "New feature"     # Twitter with image
+  post.sh --twitter --quote https://x.com/user/status/123 "My take"  # Quote tweet
 
 Platform Limits:
   Twitter:   Auto-detected based on account tier (cached for 24h)
@@ -139,6 +146,11 @@ if [ "$POST_TWITTER" = false ] && [ "$POST_FARCASTER" = false ]; then
   POST_FARCASTER=true
 fi
 
+# If no text from args, try reading from stdin (supports piped input)
+if [ -z "$TEXT" ] && [ ! -t 0 ]; then
+  TEXT=$(cat)
+fi
+
 # Validate text provided
 if [ -z "$TEXT" ]; then
   echo "Error: No text provided"
@@ -169,6 +181,22 @@ if [ "$SHORTEN_LINKS" = true ]; then
   if [ "$SAVED" -gt 0 ]; then
     echo "Saved $SAVED characters"
   fi
+  echo ""
+fi
+
+# Resolve quote tweet ID from URL if needed
+if [ -n "$QUOTE_TWEET" ]; then
+  # Extract tweet ID from URL if a URL was provided
+  if [[ "$QUOTE_TWEET" =~ status/([0-9]+) ]]; then
+    QUOTE_TWEET_ID="${BASH_REMATCH[1]}"
+  elif [[ "$QUOTE_TWEET" =~ ^[0-9]+$ ]]; then
+    QUOTE_TWEET_ID="$QUOTE_TWEET"
+  else
+    echo "Error: Invalid quote tweet reference: $QUOTE_TWEET"
+    echo "Provide a tweet ID or URL (e.g. https://x.com/user/status/123456)"
+    exit 1
+  fi
+  echo "Quote tweet ID: $QUOTE_TWEET_ID"
   echo ""
 fi
 
@@ -292,6 +320,7 @@ else
   echo "─────────────────────────────────────────────"
 fi
 [ -n "$IMAGE_PATH" ] && echo "Image: $IMAGE_PATH"
+[ -n "$QUOTE_TWEET_ID" ] && echo "Quote tweet: https://twitter.com/i/status/$QUOTE_TWEET_ID"
 echo ""
 echo "Targets:"
 [ "$POST_TWITTER" = true ] && echo "  • Twitter (@${TWITTER_ACCOUNT})"
@@ -390,9 +419,9 @@ if [ "$POST_TWITTER" = true ]; then
     done <<< "$thread_parts"
   else
     if [ -n "$IMAGE_PATH" ]; then
-      twitter_post_with_image "$TEXT" "$IMAGE_PATH" || SUCCESS=false
+      twitter_post_with_image "$TEXT" "$IMAGE_PATH" "$QUOTE_TWEET_ID" || SUCCESS=false
     else
-      twitter_post_text "$TEXT" || SUCCESS=false
+      twitter_post_text "$TEXT" "" "$QUOTE_TWEET_ID" || SUCCESS=false
     fi
   fi
   echo ""

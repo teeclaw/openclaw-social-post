@@ -82,8 +82,8 @@ const text = process.argv[1];
   fi
 }
 
-# Upload image to imgur (anonymous)
-upload_to_imgur() {
+# Upload image to public host (catbox.moe, no API key needed)
+upload_image() {
   local image_path="$1"
 
   if [ ! -f "$image_path" ]; then
@@ -123,7 +123,7 @@ farcaster_post_with_image() {
   fi
 
   echo "Uploading image..." >&2
-  local image_url=$(upload_to_imgur "$image_path")
+  local image_url=$(upload_image "$image_path")
 
   if [ $? -ne 0 ]; then
     echo "Failed to upload image for Farcaster" >&2
