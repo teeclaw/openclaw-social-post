@@ -1,7 +1,7 @@
 ---
 name: social-post
-version: 1.6.0
-description: Post and reply to X/Twitter and Farcaster with text and images. Features multi-account support, dynamic Twitter tier detection (Basic/Premium), auto-variation to avoid duplicate content detection, draft preview, character validation, threads, replies, quote tweets, and image uploads. Consumption-based pricing for X API, pay-per-cast for Farcaster. Link shortening preserves GitHub URLs.
+version: 1.5.1
+description: Post and reply to X/Twitter and Farcaster with text and images. Features multi-account support, dynamic Twitter tier detection (Basic/Premium), auto-variation to avoid duplicate content detection, draft preview, character validation, threads, replies, and image uploads. Consumption-based pricing for X API, pay-per-cast for Farcaster. Link shortening preserves GitHub URLs.
 author: 0xdas
 license: MIT
 tags: [twitter, farcaster, social, posting, automation, threads, x-api, consumption-based, multi-account, anti-spam]
@@ -385,20 +385,6 @@ scripts/reply.sh --twitter 123456 --dry-run "Test reply preview"
 ## Draft Preview
 
 The script now shows a draft preview before posting:
-
-### Formatting preference (Mr. Tee)
-
-For drafted replies/quote tweets with multiple paragraphs, keep **one blank line between paragraphs** for readability.
-
-Example:
-
-```text
-First paragraph.
-
-Second paragraph.
-
-Third paragraph.
-```
 
 ```
 === Draft Preview ===
