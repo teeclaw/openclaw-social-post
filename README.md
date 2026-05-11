@@ -34,6 +34,7 @@
   - [X/Twitter Setup](#xtwitter-setup-)
   - [Farcaster Setup](#farcaster-setup-)
 - [Platform Comparison](#platform-comparison)
+- [Related OpenClaw X/Twitter Workflows](#related-openclaw-xtwitter-workflows)
 - [Verify Setup](#verify-setup)
 - [Quick Start](#quick-start)
 - [Troubleshooting](#troubleshooting)
@@ -71,6 +72,12 @@
 - ✅ Fixed cost: 0.001 USDC per cast
 - ✅ Pre-fund wallet with USDC on Base chain
 - ✅ Deducted instantly per cast
+
+### Related OpenClaw X/Twitter Workflows
+
+Use Social Post when you want a local shell skill for posting tweets, posting tweet replies, quote tweets, threads, and Farcaster casts from OpenClaw.
+
+For API-backed X/Twitter automation beyond local posting, [TweetClaw](https://github.com/Xquik-dev/tweetclaw) adds an OpenClaw plugin path for structured Xquik endpoints, including tweet search, search tweet replies, post tweets, post tweet replies, follower export, user lookup, media upload, media download, direct messages, tweet monitors, webhooks, and giveaway draws.
 
 ### Required Credentials
 
